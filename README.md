@@ -1,21 +1,8 @@
-# Cold-Region Expressway Traffic–Weather Dataset
+# Cold-Region Expressway Traffic–Weather Dataset: Source Code
 
-This repository provides the Python scripts used to process and validate a multi-source traffic–weather dataset for expressways in cold regions. The dataset integrates hourly toll-station traffic records with ERA5-derived winter meteorological variables and supports reproducible analyses of traffic operation under snow, low temperature, and other winter weather conditions.
+This repository contains the Python scripts used to process toll-based traffic records, inspect and prepare ERA5 weather data, construct the released station-hour traffic–weather dataset, and reproduce the dataset's technical-validation figures.
 
-The repository is associated with the data article describing the construction, quality control, and technical validation of a winter expressway traffic–weather dataset.
-
-## Dataset overview
-
-The dataset covers hourly traffic and meteorological observations during a full winter period:
-
-- Study period: 2022-11-01 00:00:00 to 2023-03-31 23:00:00
-- Temporal resolution: hourly
-- Spatial unit: toll station
-- Coordinate system: WGS-84
-- Main data table: `ColdRegion_Expressway_TrafficWeather_Hourly.csv`
-- Station metadata table: `Station_Locations.csv`
-
-The public dataset uses anonymized continuous station identifiers. Station coordinates are rounded for public release.
+The associated study describes an hourly traffic–weather dataset for 211 expressway toll stations in Jilin Province, China, covering 1 November 2022 to 31 March 2023.
 
 ## Repository structure
 
@@ -41,259 +28,93 @@ The public dataset uses anonymized continuous station identifiers. Station coord
     └── 08_snow_sensitive_station_correlation.py
 ```
 
-## Script description
+## Data sources and access
 
-### Data processing scripts
+### Toll transaction data
 
-| Script | Purpose |
+The original vehicle-level toll transaction records were collected by Jilin Expressway Group and managed and provided by the Comprehensive Planning Division of the Jilin Provincial Department of Transport. These records are not included in this repository because they are not publicly downloadable. Access is subject to approval by the relevant institutions and applicable data-security requirements. Researchers seeking access should contact the Comprehensive Planning Division through the official website of the Jilin Provincial Department of Transport: <https://jtyst.jl.gov.cn/>.
+
+The traffic-processing scripts expect the source fields used in the project, including the exit-station identifier, vehicle-type code, entry and exit timestamps, and trip distance. For the aggregation script, the original CSV files use the field names `出口站编号`, `最终车型`, `出口日期时间`, `入口日期时间`, and `实际里程`.
+
+### ERA5 weather data
+
+The weather data used in the study are from the ERA5 hourly data on single levels from 1940 to present dataset, distributed by the Copernicus Climate Change Service (C3S) Climate Data Store (CDS): <https://doi.org/10.24381/cds.adbb2d47>. The study uses the `2m temperature` and `Snow depth` variables. The original ERA5 files are not included in this code repository and can be retrieved from the CDS using the dataset identifier, variables, dates, and geographical selection described in the associated article.
+
+### Processed dataset
+
+The processed, anonymized, and aggregated station-hour traffic–weather dataset is a separate research output and is distributed separately from this source-code repository. The original vehicle-level toll records, internal station mappings, and other restricted input files are not included here.
+
+## Software environment
+
+The scripts were developed for Python 3.11. Install the listed dependencies from the repository root:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+The dependencies include pandas, NumPy, Matplotlib, Seaborn, SciPy, GeoPandas, Cartopy, openpyxl, netCDF4, and xarray. Some geospatial packages may require platform-specific system libraries. A Conda environment using the `conda-forge` channel may be helpful when installing GeoPandas or Cartopy.
+
+To view the available command-line options for an individual script, run it with `--help`. For example:
+
+```bash
+python src/01_aggregate_toll_records_hourly.py --help
+python validation/01_data_completeness_heatmap.py --help
+```
+
+All paths to input and output files are supplied by command-line arguments. Create the required local input and output directories before running the scripts.
+
+## Source scripts
+
+### Data processing (`src/`)
+
+| Script | Description |
 |---|---|
-| `src/01_aggregate_toll_records_hourly.py` | Aggregates raw toll transaction records into hourly station-level traffic indicators. |
-| `src/02_match_station_coordinates.py` | Matches toll-station traffic records with station coordinate information. |
-| `src/03_inspect_era5_netcdf_structure.py` | Inspects the variable, coordinate, dimension, and time structure of ERA5 NetCDF files. |
-| `src/04_update_snow_depth_from_fusion.py` | Updates the snow-depth field in the public table from the corrected weather-fusion result. |
-| `src/05_build_publication_dataset.py` | Builds the final public data package, including the main table, station metadata, variable description table, and summary report. |
+| `01_aggregate_toll_records_hourly.py` | Reads monthly toll-transaction CSV files, applies record and trip-speed filters, and aggregates trips by exit station and exit hour. |
+| `02_match_station_coordinates.py` | Matches station-level traffic records with station-coordinate information and writes a report of unmatched stations. |
+| `03_inspect_era5_netcdf_structure.py` | Reports the dimensions, coordinates, variables, and time information in an ERA5 NetCDF file. |
+| `04_update_snow_depth_from_fusion.py` | Updates the snow-depth field in a station-hour table using a weather-fusion output and a station-ID mapping file. |
+| `05_build_publication_dataset.py` | Builds the publication data package, including the hourly traffic–weather table, station-location table, variable-description table, and a summary report. |
 
-### Validation and figure-generation scripts
+### Technical validation and figure generation (`validation/`)
 
-| Script | Purpose |
+| Script | Description |
 |---|---|
-| `validation/01_data_completeness_heatmap.py` | Generates the station–date data completeness heatmap. |
-| `validation/02_speed_distribution_diurnal_variation.py` | Generates the speed distribution histogram and diurnal speed boxplots. |
-| `validation/03_spatial_distribution_map.py` | Generates spatial maps of cumulative traffic volume and average traffic speed. |
-| `validation/04_weekly_traffic_profile.py` | Generates the weekly traffic-volume and speed profiles. |
-| `validation/05_spring_festival_hourly_profile.py` | Generates the Spring Festival hourly traffic profile for the highest-volume stations. |
-| `validation/06_hourly_speed_boxplot.py` | Generates the hourly speed boxplot with the hourly mean-speed curve. |
-| `validation/07_networkwide_traffic_weather_correlation.py` | Generates the network-wide traffic–weather correlation matrix. |
-| `validation/08_snow_sensitive_station_correlation.py` | Generates the correlation matrix for the top snow-sensitive stations. |
+| `01_data_completeness_heatmap.py` | Generates the station–date data-completeness heatmap. |
+| `02_speed_distribution_diurnal_variation.py` | Generates the traffic-speed distribution and diurnal-variation figures. |
+| `03_spatial_distribution_map.py` | Generates spatial maps of cumulative traffic volume and average traffic speed. Requires administrative-boundary and expressway-network GIS shapefiles. |
+| `04_weekly_traffic_profile.py` | Generates weekly profiles of passenger-vehicle volume, truck volume, and traffic speed. |
+| `05_spring_festival_hourly_profile.py` | Generates hourly traffic profiles for the selected high-volume stations around the Spring Festival. |
+| `06_hourly_speed_boxplot.py` | Generates hourly traffic-speed boxplots. |
+| `07_networkwide_traffic_weather_correlation.py` | Generates the network-wide traffic–weather correlation analysis and figure. |
+| `08_snow_sensitive_station_correlation.py` | Identifies snow-sensitive stations and generates the corresponding traffic–weather correlation analysis and figure. |
 
-## Environment
+## Running the scripts
 
-The scripts were developed and tested using Python 3.11 with Anaconda. The required packages can be installed using:
+The scripts are independent command-line programs. Run each script from the repository root and provide the input and output paths required by that script. Use `--help` to see all required and optional arguments.
 
-```bash
-pip install -r requirements.txt
-```
+The main processing sequence is:
 
-A recommended `requirements.txt` is:
+1. Aggregate the original toll transaction records using `src/01_aggregate_toll_records_hourly.py`.
+2. Match station coordinates using `src/02_match_station_coordinates.py`.
+3. Inspect the downloaded ERA5 NetCDF files using `src/03_inspect_era5_netcdf_structure.py`.
+4. Where required by the project workflow, update snow-depth values using `src/04_update_snow_depth_from_fusion.py`.
+5. Construct the publication data package using `src/05_build_publication_dataset.py`.
+6. Run the relevant scripts in `validation/` to reproduce the technical-validation figures.
 
-```text
-pandas
-numpy
-matplotlib
-seaborn
-scipy
-geopandas
-cartopy
-openpyxl
-netCDF4
-xarray
-```
+The exact input files required by each step depend on the source data and intermediate outputs available to the researcher. Restricted toll records, internal station-ID mapping files, weather-fusion intermediate files, and GIS shapefiles must be obtained separately through the appropriate sources and permissions; they are not distributed in this repository.
 
-Some spatial scripts require a working geospatial Python environment. If installation through `pip` fails for `geopandas` or `cartopy`, using `conda` is recommended:
+## Reproducibility notes
 
-```bash
-conda install -c conda-forge geopandas cartopy shapely pyproj fiona
-```
-
-## Data availability
-
-The processed public dataset should be downloaded from the corresponding public data repository, such as Figshare or Zenodo. The repository is designed to reproduce the processing workflow and technical validation figures when the required input files are placed under the local data directory.
-
-For reproducibility, users may organize the local data files as follows:
-
-```text
-data/
-├── raw_toll_records/
-├── raw_weather/
-├── processed/
-├── publication_package/
-└── gis/
-    ├── admin_boundary.shp
-    └── expressway_network/
-```
-
-The original raw toll transaction records may contain sensitive operational information and are not included in this repository. Publicly released data should use anonymized station identifiers and rounded coordinates.
-
-## Typical workflow
-
-### Step 1. Aggregate raw toll records to hourly station-level traffic records
-
-```bash
-python src/01_aggregate_toll_records_hourly.py ^
-  --input-dir "data/raw_toll_records" ^
-  --output-dir "data/processed" ^
-  --output-name "hourly_toll_traffic_records.csv"
-```
-
-### Step 2. Match station coordinates
-
-```bash
-python src/02_match_station_coordinates.py ^
-  --traffic-file "data/processed/hourly_toll_traffic_records.csv" ^
-  --coordinate-file "data/raw_toll_records/tollgate_data.xlsx" ^
-  --coordinate-sheet "高速收费站（截至2023.8）" ^
-  --output-file "data/processed/traffic_records_with_coordinates.csv" ^
-  --missing-report-file "data/processed/missing_station_report.csv"
-```
-
-### Step 3. Inspect ERA5 NetCDF files
-
-```bash
-python src/03_inspect_era5_netcdf_structure.py ^
-  --input-file "data/raw_weather/CORRECT_instant_winter_2022_2023_final.nc" ^
-  --output-file "data/processed/netcdf_structure_report.txt"
-```
-
-### Step 4. Update snow-depth information
-
-```bash
-python src/04_update_snow_depth_from_fusion.py ^
-  --published-file "data/processed/ColdRegion_Expressway_TrafficWeather_Hourly_v2.csv" ^
-  --fusion-file "data/processed/Jilin_Traffic_Weather_Final_v6_nearest.csv" ^
-  --mapping-file "data/processed/station_id_mapping_internal.csv" ^
-  --output-file "data/processed/ColdRegion_Expressway_TrafficWeather_Hourly_v3.csv" ^
-  --summary-file "data/processed/snow_depth_update_summary.txt"
-```
-
-### Step 5. Build the final publication package
-
-```bash
-python src/05_build_publication_dataset.py ^
-  --traffic-file "data/processed/traffic_weather_fixed_mm.csv" ^
-  --weather-file "data/processed/weather_only_rebuilt.csv" ^
-  --output-dir "data/publication_package" ^
-  --panel-start "2022-11-01 00:00:00" ^
-  --panel-end "2023-03-31 23:00:00" ^
-  --coordinate-decimals 2
-```
-
-The expected outputs include:
-
-```text
-data/publication_package/
-├── ColdRegion_Expressway_TrafficWeather_Hourly.csv
-├── Station_Locations.csv
-├── Variables_Description.csv
-└── summary_report.txt
-```
-
-## Technical validation and figure reproduction
-
-All validation scripts use command-line arguments and generate both high-resolution TIFF files and PNG preview files. The TIFF files are saved at 600 DPI.
-
-### Data completeness heatmap
-
-```bash
-python validation/01_data_completeness_heatmap.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_2_data_completeness"
-```
-
-### Speed distribution and diurnal variation
-
-```bash
-python validation/02_speed_distribution_diurnal_variation.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_3_speed_distribution"
-```
-
-### Spatial distribution of traffic volume and speed
-
-```bash
-python validation/03_spatial_distribution_map.py ^
-  --data-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --coordinate-file "data/publication_package/Station_Locations.csv" ^
-  --admin-shp "data/gis/admin_boundary.shp" ^
-  --road-shp-dir "data/gis/expressway_network" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_4_spatial_distribution" ^
-  --speed-col "traffic_speed_kmh" ^
-  --volume-col "volume_total_veh" ^
-  --station-col "station_id" ^
-  --lon-col "longitude" ^
-  --lat-col "latitude" ^
-  --extent 120.5 132.5 39.5 47.5
-```
-
-### Weekly traffic profile
-
-```bash
-python validation/04_weekly_traffic_profile.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_5_weekly_traffic_profile"
-```
-
-### Spring Festival hourly profile
-
-```bash
-python validation/05_spring_festival_hourly_profile.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_6_spring_festival_hourly_profile" ^
-  --cny-date "2023-01-22"
-```
-
-### Hourly speed boxplot
-
-```bash
-python validation/06_hourly_speed_boxplot.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_7_hourly_speed_boxplot"
-```
-
-### Network-wide traffic–weather correlation matrix
-
-```bash
-python validation/07_networkwide_traffic_weather_correlation.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_8_networkwide_correlation_matrix"
-```
-
-### Snow-sensitive station correlation matrix
-
-```bash
-python validation/08_snow_sensitive_station_correlation.py ^
-  --input-file "data/publication_package/ColdRegion_Expressway_TrafficWeather_Hourly.csv" ^
-  --output-dir "outputs/figures" ^
-  --output-prefix "figure_9_snow_sensitive_station_correlation" ^
-  --snow-threshold-mm 20 ^
-  --top-k 5
-```
-
-## Output figures
-
-The validation scripts generate publication-ready figures in TIFF format and preview images in PNG format. Typical outputs are written to:
-
-```text
-outputs/figures/
-├── figure_2_data_completeness.tif
-├── figure_3_speed_distribution.tif
-├── figure_4_spatial_distribution.tif
-├── figure_5_weekly_traffic_profile.tif
-├── figure_6_spring_festival_hourly_profile.tif
-├── figure_7_hourly_speed_boxplot.tif
-├── figure_8_networkwide_correlation_matrix.tif
-└── figure_9_snow_sensitive_station_correlation.tif
-```
-
-## Notes on reproducibility
-
-1. All scripts use command-line arguments to avoid hard-coded local paths.
-2. Public station identifiers are anonymized continuous integers.
-3. Public coordinates are rounded to reduce location sensitivity.
-4. Traffic-volume missing values are represented as zero when no valid station-hour traffic observation is available.
-5. Speed values outside the specified cleaning range are excluded from selected validation figures.
-6. The spatial map requires local GIS shapefiles for administrative boundaries and the expressway network.
+- The public traffic–weather dataset uses anonymized station identifiers and reduced-precision station coordinates.
+- The original vehicle-level toll transaction records and internal station mappings are not included in this repository.
+- The spatial-distribution script requires local GIS boundary and road-network shapefiles.
+- The validation scripts operate on the relevant processed station-hour data; use the column names and units documented in the associated dataset.
+- Running the complete processing workflow requires access to the relevant input and intermediate files. Public availability of this code does not imply public availability of restricted source data.
 
 ## License
 
-The code in this repository is released under the license specified in `LICENSE`. The public dataset should follow the license of the corresponding data repository. For open scientific reuse, CC BY 4.0 is recommended for the released dataset.
+The source code in this repository is distributed under the MIT License. See the `LICENSE` file for the full license text. The license for the separately distributed traffic–weather dataset is specified in that dataset's repository record.
 
 ## Citation
 
-If you use this dataset or code, please cite the associated data article and the public dataset repository DOI once available.
+If you use these scripts, please cite the associated article and the archived software record when its DOI is available. The processed traffic–weather dataset should be cited separately using its own DOI.
