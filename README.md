@@ -115,6 +115,11 @@ The exact input files required by each step depend on the source data and interm
 
 The source code in this repository is distributed under the MIT License. See the `LICENSE` file for the full license text. The license for the separately distributed traffic–weather dataset is specified in that dataset's repository record.
 
+
 ## Citation
 
-If you use these scripts, please cite the associated article and the archived software record when its DOI is available. The processed traffic–weather dataset should be cited separately using its own DOI.
+If you use this software, please cite the following archived version:
+
+Feng, M. Source code for: A winter traffic–weather dataset for expressways in cold regions. Figshare (2026). https://doi.org/10.6084/m9.figshare.35014045
+
+The associated traffic–weather dataset should be cited separately using its own DOI.
