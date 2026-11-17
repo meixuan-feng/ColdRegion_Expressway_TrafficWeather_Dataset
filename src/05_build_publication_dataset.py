@@ -467,17 +467,17 @@ class PublicationDatasetBuilder:
     def build_variable_description():
         return pd.DataFrame(
             [
-                ["station_id", "-", "Anonymized continuous integer station identifier.", "Derived from internal station mapping"],
-                ["longitude", "degree", "Longitude in the WGS-84 coordinate system, rounded for public release.", "Derived from internal station coordinates"],
-                ["latitude", "degree", "Latitude in the WGS-84 coordinate system, rounded for public release.", "Derived from internal station coordinates"],
-                ["datetime", "-", "Hourly timestamp in local time.", "Traffic-weather merged dataset"],
-                ["traffic_speed_kmh", "km/h", "Average traffic speed at the station-hour level. Missing values indicate no valid traffic observation.", "Derived from toll transaction records"],
-                ["volume_total_veh", "veh/h", "Total hourly traffic volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
-                ["volume_passenger_veh", "veh/h", "Hourly passenger-vehicle volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
-                ["volume_truck_veh", "veh/h", "Hourly truck volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
-                ["volume_other_veh", "veh/h", "Hourly volume of all remaining vehicle types, including records with missing vehicle-type codes. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
-                ["snow_depth_mm", "mm", "ERA5 snow-depth variable matched to each station-hour record.", "Derived from ERA5-based weather variables"],
-                ["temperature_c", "°C", "ERA5 2 m air temperature matched to each station-hour record.", "Derived from ERA5-based weather variables"],
+                ["station_id", "-", "Anonymized sequential station identifier ranging from 1 to 211; used to link the main table with Station_Locations.csv.", "Derived from internal station mapping"],
+                ["longitude", "degree", "Longitude in the WGS-84 coordinate system, truncated to 0.01 degrees for public release.", "Derived from internal station coordinates"],
+                ["latitude", "degree", "Latitude in the WGS-84 coordinate system, truncated to 0.01 degrees for public release.", "Derived from internal station coordinates"],
+                ["datetime", "-", "Observation timestamp in Beijing Time (UTC+8), rounded down to the beginning of the hour; format YYYY-MM-DD HH:00:00.", "Toll transaction records and traffic-weather merged dataset"],
+                ["traffic_speed_kmh", "km/h", "Time mean speed (TMS), calculated as the arithmetic mean of trip-level average speeds. Each trip-level speed is travel distance divided by travel duration. The trips are assigned by exit timestamp.", "Derived from toll transaction records"],
+                ["volume_total_veh", "veh/h", "Number of toll trips exiting at the station within the hour, assigned by exit timestamp. Represents toll throughput rather than mainline cross-sectional flow.", "Derived from toll transaction records"],
+                ["volume_passenger_veh", "veh/h", "Number of passenger-vehicle toll trips exiting at the station within the hour; vehicle types 1-4.", "Derived from toll transaction records"],
+                ["volume_truck_veh", "veh/h", "Number of truck toll trips exiting at the station within the hour; vehicle types 11 and above.", "Derived from toll transaction records"],
+                ["volume_other_veh", "veh/h", "Number of other-vehicle toll trips exiting at the station within the hour, including remaining and missing vehicle-type codes.", "Derived from toll transaction records"],
+                ["snow_depth_mm", "mm", "ERA5 snow depth matched to the corresponding station-hour record.", "Derived from ERA5 weather data"],
+                ["temperature_c", "°C", "ERA5 2-m air temperature matched to the corresponding station-hour record.", "Derived from ERA5 weather data"],
             ],
             columns=["Column_Name", "Unit", "Description", "Source"]
         )
