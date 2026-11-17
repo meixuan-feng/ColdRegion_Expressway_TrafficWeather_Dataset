@@ -121,4 +121,4 @@ If you use these scripts, please cite the archived software record:
 
 Feng, M. Source code for: A winter traffic–weather dataset for expressways in cold regions. Figshare (2026). https://doi.org/10.6084/m9.figshare.35014045.
 
-The processed traffic–weather dataset should be cited separately using its own DOI.
+Please also cite the processed traffic–weather dataset separately: Feng, M. ColdRegion_Expressway_TrafficWeather_Dataset. *figshare* https://doi.org/10.6084/m9.figshare.32215491 (2026).
