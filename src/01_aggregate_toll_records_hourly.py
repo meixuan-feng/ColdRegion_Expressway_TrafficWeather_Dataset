@@ -182,6 +182,7 @@ class TollTransactionAggregator:
                 total_volume=("speed_kmh", "count"),
                 passenger_volume=("vehicle_category", lambda x: (x == "passenger").sum()),
                 truck_volume=("vehicle_category", lambda x: (x == "truck").sum()),
+                other_volume=("vehicle_category", lambda x: (x == "other").sum()),
                 avg_speed=("speed_kmh", "mean")
             )
             .reset_index()
@@ -194,6 +195,18 @@ class TollTransactionAggregator:
         )
 
         self.hourly_data["avg_speed"] = self.hourly_data["avg_speed"].round(2)
+
+        category_total = (
+            self.hourly_data["passenger_volume"]
+            + self.hourly_data["truck_volume"]
+            + self.hourly_data["other_volume"]
+        )
+        inconsistent = self.hourly_data["total_volume"] != category_total
+        if inconsistent.any():
+            raise RuntimeError(
+                "Hourly vehicle volumes are inconsistent. "
+                "See the aggregation logic for passenger, truck, and other vehicles."
+            )
 
         del self.data
         self.data = None
@@ -220,6 +233,7 @@ class TollTransactionAggregator:
         output_df["total_volume"] = output_df["total_volume"].astype(int)
         output_df["passenger_volume"] = output_df["passenger_volume"].astype(int)
         output_df["truck_volume"] = output_df["truck_volume"].astype(int)
+        output_df["other_volume"] = output_df["other_volume"].astype(int)
 
         output_df.to_csv(output_path, index=False, encoding="utf-8-sig")
 
