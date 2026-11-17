@@ -42,7 +42,7 @@ The weather data used in the study are from the ERA5 hourly data on single level
 
 ### Processed dataset
 
-The processed, anonymized, and aggregated station-hour traffic–weather dataset is a separate research output and is distributed separately from this source-code repository. The original vehicle-level toll records, internal station mappings, and other restricted input files are not included here.
+The processed, anonymized, and aggregated station-hour traffic–weather dataset is a separate research output and is distributed separately from this source-code repository. The original vehicle-level toll records, internal station mappings, and other restricted input files are not included here. For each station-hour, total traffic volume equals the sum of passenger-vehicle, truck, and other-vehicle volumes. Vehicle types 1–4 are classified as passenger vehicles, types 11 and above as trucks, and all remaining or missing vehicle-type codes as other vehicles.
 
 ## Software environment
 
@@ -69,11 +69,11 @@ All paths to input and output files are supplied by command-line arguments. Crea
 
 | Script | Description |
 |---|---|
-| `01_aggregate_toll_records_hourly.py` | Reads monthly toll-transaction CSV files, applies record and trip-speed filters, and aggregates trips by exit station and exit hour. |
+| `01_aggregate_toll_records_hourly.py` | Reads monthly toll-transaction CSV files, applies record and trip-speed filters, and aggregates total, passenger, truck, and other-vehicle trips by exit station and exit hour. |
 | `02_match_station_coordinates.py` | Matches station-level traffic records with station-coordinate information and writes a report of unmatched stations. |
 | `03_inspect_era5_netcdf_structure.py` | Reports the dimensions, coordinates, variables, and time information in an ERA5 NetCDF file. |
 | `04_update_snow_depth_from_fusion.py` | Updates the snow-depth field in a station-hour table using a weather-fusion output and a station-ID mapping file. |
-| `05_build_publication_dataset.py` | Builds the publication data package, including the hourly traffic–weather table, station-location table, variable-description table, and a summary report. |
+| `05_build_publication_dataset.py` | Builds the publication data package, including the hourly traffic–weather table, station-location table, variable-description table, and a summary report; it also checks hourly vehicle-volume consistency. |
 
 ### Technical validation and figure generation (`validation/`)
 
@@ -115,11 +115,10 @@ The exact input files required by each step depend on the source data and interm
 
 The source code in this repository is distributed under the MIT License. See the `LICENSE` file for the full license text. The license for the separately distributed traffic–weather dataset is specified in that dataset's repository record.
 
-
 ## Citation
 
-If you use this software, please cite the following archived version:
+If you use these scripts, please cite the archived software record:
 
-Feng, M. Source code for: A winter traffic–weather dataset for expressways in cold regions. Figshare (2026). https://doi.org/10.6084/m9.figshare.35014045
+Feng, M. Source code for: A winter traffic–weather dataset for expressways in cold regions. Figshare (2026). https://doi.org/10.6084/m9.figshare.35014045.
 
-The associated traffic–weather dataset should be cited separately using its own DOI.
+The processed traffic–weather dataset should be cited separately using its own DOI.
