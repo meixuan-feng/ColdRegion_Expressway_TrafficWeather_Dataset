@@ -12,6 +12,7 @@ TRAFFIC_COLUMNS = [
     "volume_total_veh",
     "volume_passenger_veh",
     "volume_truck_veh",
+    "volume_other_veh",
 ]
 
 WEATHER_COLUMNS = [
@@ -158,6 +159,7 @@ class PublicationDatasetBuilder:
             "volume_total_veh": ["volume_total_veh", "total_volume", "volume_total", "total_flow"],
             "volume_passenger_veh": ["volume_passenger_veh", "passenger_volume", "passenger_flow"],
             "volume_truck_veh": ["volume_truck_veh", "truck_volume", "truck_flow", "freight_volume"],
+            "volume_other_veh": ["volume_other_veh", "other_volume", "other_vehicle_volume", "other_flow"],
         }
 
         resolved = {
@@ -182,6 +184,7 @@ class PublicationDatasetBuilder:
         traffic_work["volume_total_veh"] = to_numeric(traffic_raw[resolved["volume_total_veh"]])
         traffic_work["volume_passenger_veh"] = to_numeric(traffic_raw[resolved["volume_passenger_veh"]])
         traffic_work["volume_truck_veh"] = to_numeric(traffic_raw[resolved["volume_truck_veh"]])
+        traffic_work["volume_other_veh"] = to_numeric(traffic_raw[resolved["volume_other_veh"]])
 
         traffic_work = traffic_work.dropna(
             subset=["datetime", "raw_station_code", "longitude", "latitude"]
@@ -192,6 +195,35 @@ class PublicationDatasetBuilder:
             (traffic_work["datetime"] >= self.panel_start) &
             (traffic_work["datetime"] <= self.panel_end)
         ].copy()
+
+        volume_columns = [
+            "volume_total_veh",
+            "volume_passenger_veh",
+            "volume_truck_veh",
+            "volume_other_veh",
+        ]
+        if traffic_work[volume_columns].isna().any().any():
+            raise ValueError("Traffic volume columns contain missing or non-numeric values.")
+
+        inconsistent = traffic_work["volume_total_veh"] != (
+            traffic_work["volume_passenger_veh"]
+            + traffic_work["volume_truck_veh"]
+            + traffic_work["volume_other_veh"]
+        )
+        if inconsistent.any():
+            errors = traffic_work.loc[inconsistent, [
+                "datetime", "raw_station_code", *volume_columns
+            ]].copy()
+            safe_to_csv(
+                errors,
+                self.output_dir / "volume_consistency_errors.csv",
+                encoding="utf-8-sig"
+            )
+            raise ValueError(
+                f"Found {int(inconsistent.sum())} traffic rows where total volume "
+                "does not equal passenger + truck + other volume. "
+                "See volume_consistency_errors.csv."
+            )
 
         return traffic_work
 
@@ -379,8 +411,23 @@ class PublicationDatasetBuilder:
             how="left"
         )
 
-        for col in ["volume_total_veh", "volume_passenger_veh", "volume_truck_veh"]:
+        for col in [
+            "volume_total_veh",
+            "volume_passenger_veh",
+            "volume_truck_veh",
+            "volume_other_veh",
+        ]:
             public_data[col] = public_data[col].fillna(0).astype(int)
+
+        inconsistent = public_data["volume_total_veh"] != (
+            public_data["volume_passenger_veh"]
+            + public_data["volume_truck_veh"]
+            + public_data["volume_other_veh"]
+        )
+        if inconsistent.any():
+            raise RuntimeError(
+                f"Final dataset contains {int(inconsistent.sum())} rows with inconsistent vehicle volumes."
+            )
 
         public_data = public_data[
             ["datetime", "station_id"] + TRAFFIC_COLUMNS + WEATHER_COLUMNS
@@ -428,6 +475,7 @@ class PublicationDatasetBuilder:
                 ["volume_total_veh", "veh/h", "Total hourly traffic volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
                 ["volume_passenger_veh", "veh/h", "Hourly passenger-vehicle volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
                 ["volume_truck_veh", "veh/h", "Hourly truck volume. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
+                ["volume_other_veh", "veh/h", "Hourly volume of all remaining vehicle types, including records with missing vehicle-type codes. Values are set to 0 when no valid traffic observation is available.", "Derived from toll transaction records"],
                 ["snow_depth_mm", "mm", "ERA5 snow-depth variable matched to each station-hour record.", "Derived from ERA5-based weather variables"],
                 ["temperature_c", "°C", "ERA5 2 m air temperature matched to each station-hour record.", "Derived from ERA5-based weather variables"],
             ],
